@@ -106,46 +106,4 @@ jobs:
         if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-          echo "$PWD/depot_tools" >> $GITHUB_PATH
-
-      - name: Checkout V8 Source Code
-        run: |
-          fetch v8
-          cd v8
-          git checkout ${{ steps.version.outputs.content }}
-          gclient sync
-
-      - name: Build V8
-        shell: pwsh
-        run: |
-          Set-Location -Path v8
-          python tools/dev/v8gen.py x64.release
-          Copy-Item "../platforms/${{ matrix.config.name }}_${{ matrix.config.architecture }}/args.gn" -Destination "./out.gn/x64.release/args.gn" -force
-          gn gen out.gn/x64.release
-          Get-Content ./out.gn/x64.release/args.gn | Write-Output
-          ninja -C out.gn/x64.release
-      
-      - name: Prepare Artifact Directory
-        shell: pwsh
-        run: |
-          New-Item -ItemType directory -Path ./artifact/
-          Copy-Item -Path ./v8/include -Recurse -Filter *.h -Destination ./artifact/ -Container
-          Copy-Item -Path ./v8/out.gn/x64.release/obj/${{ matrix.config.library_name }} -Destination ./artifact/${{ matrix.config.name }}_${{ matrix.config.architecture }}_${{ matrix.config.library_name }}
-      
-      - name: Upload Headers & Monolithic Lib
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.config.name }}_${{ matrix.config.architecture }}_v8_monolith
-          path: artifact/
-
-      - name: Publish Compiled Libraries
-        if: >-
-          startsWith(github.event.head_commit.message, '[Release]') &&
-          github.ref == 'refs/heads/master'
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          name: V8 ${{ steps.version.outputs.content }}
-          tag_name: v${{ steps.version.outputs.content }}
-          files: artifact/${{ matrix.config.name }}_${{ matrix.config.architecture }}_${{ matrix.config.library_name }}
+          echo
